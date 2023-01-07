@@ -38,11 +38,13 @@ words that match based on the characters found. Empty boxes that are within the 
 
     entries = []
 
+
     def on_release(event):
         entry_content = event.widget.get()
         entry_content = entry_content.upper()
         event.widget.delete(0, "end")
         event.widget.insert(0, entry_content)
+
 
     wordlengths = []
 
@@ -57,6 +59,7 @@ words that match based on the characters found. Empty boxes that are within the 
 
     selected_option = tk.StringVar()
 
+
     def option_selected(*args):
         nonlocal selected_option
         if isinstance(selected_option, str):
@@ -68,6 +71,7 @@ words that match based on the characters found. Empty boxes that are within the 
     result_pages = []
     result_frames = []
     result_labels = []
+
 
     def generate_button_click():
         nonlocal result_labels
@@ -114,19 +118,19 @@ words that match based on the characters found. Empty boxes that are within the 
 
         res_frame = tk.Frame(res_page, height=((screen_height//5)*3)//6)
         res_frame.pack(side="top", expand=True, fill="x")
+        result_frames.append(res_frame)
 
         counter = 0
 
         for match in matches:
             if counter % 30 == 0 and counter:
-                res_page = tk.Frame(frame2, height=(screen_height//5)*3, width=screen_width)
+                res_page = tk.Frame(frame2, relief="groove", bd=5, height=(screen_height//5)*3, width=screen_width)
                 result_pages.append(res_page)
-                break
 
             if counter % 5 == 0 and counter:
-                result_frames.append(res_frame)
                 res_frame = tk.Frame(res_page, width=screen_width, height=((screen_height//5)*3)//6)
                 res_frame.pack(side="top", fill="x", expand=True)
+                result_frames.append(res_frame)
 
             res_label = tk.Label(res_frame, text="- " + match)
             res_label.pack(side="left", expand=True)
@@ -136,8 +140,27 @@ words that match based on the characters found. Empty boxes that are within the 
    
 
     def clear_button_click():
+        nonlocal result_pages
+        nonlocal result_frames
+        nonlocal result_labels
+
         for entry in entries:
             entry.delete(0, "end")
+
+        for p in result_pages:
+            p.pack_forget()
+            p.destroy()
+
+        for f in result_frames:
+            f.pack_forget()
+            f.destroy()
+
+        for l in result_labels:
+            l.pack_forget()
+            l.destroy()
+
+        page_no.configure(text="1")
+
 
     options_frame = tk.Frame(frame1)
     options_frame.pack(fill="x")
@@ -155,6 +178,46 @@ words that match based on the characters found. Empty boxes that are within the 
 
     wordlength_label = tk.Label(options_frame, text="Please specify length of answer: ")
     wordlength_label.pack(pady=20, side="right")
+
+    change_page = tk.Frame(frame1)
+    change_page.pack(fill="x", padx=20)
+
+
+    def next_page():
+        nonlocal result_pages
+        if len(result_pages) <= 1:
+            return
+        page = int(page_no.cget("text"))
+        if page == len(result_pages):
+            return
+        result_pages[page-1].pack_forget()
+        result_pages[page].pack(fill="both", expand=True, padx=20, pady=20)
+        page_no.configure(text=str(page + 1))
+
+
+    def previous_page():
+        nonlocal result_pages
+        if len(result_pages) <= 1:
+            return
+        page = int(page_no.cget("text"))
+        if page == 1:
+            return
+        result_pages[page-1].pack_forget()
+        result_pages[page-2].pack(fill="both", expand=True, padx=20, pady=20)
+        page_no.configure(text=str(page - 1))
+
+
+    page_right = tk.Button(change_page, text=">", command=next_page)
+    page_right.pack(side="right")
+
+    page_no = tk.Label(change_page, text="1")
+    page_no.pack(side="right")
+
+    page_left = tk.Button(change_page, text="<", command=previous_page)
+    page_left.pack(side="right")
+
+    page_text = tk.Label(change_page, text="Answer Results")
+    page_text.pack(side="right")
 
     root.mainloop()
 
