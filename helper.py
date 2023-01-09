@@ -10,30 +10,34 @@ def main():
     root.title("Crossword Helper")
 
     # get user's screen width and height
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
+    screen_width = int(root.winfo_screenwidth() // 2)
+    screen_height = int(root.winfo_screenheight() // 2)
 
     # make window size to user's screen
     root.geometry(f"{screen_width}x{screen_height}")
 
-    frame1 = tk.Frame(root, height=(screen_height//5)*2, width=screen_width)
-    frame1.pack(side="top", fill="both", expand=True)
+    frame1 = tk.Frame(root, height=(screen_height//5)*1.5, width=screen_width, background="#D9D9F3")
+    frame1.pack(side="top", fill="both")
 
-    frame2 = tk.Frame(root, relief="raised", bd=10, height=(screen_height//5)*3, width=screen_width)
-    frame2.pack(side="bottom", fill="both", expand=True)
+    frame2 = tk.Frame(root, relief="raised", bd=10, height=(screen_height//5)*3.5, width=screen_width, background="#DDEDEA")
+    frame2.pack(fill="both", expand=True)
+
+    res_page = tk.Frame(frame2, relief="groove", bd=5, height=(screen_height//5)*3.5, width=screen_width, background="#DAEAF6")
+    res_page.pack(fill="both", padx=40, pady=40, expand=True)
 
     instructions = tk.Label(frame1, 
         text="Find potential answers to your crossword puzzle clues by entering all known characters in the corresponding boxes. \
 Select the length of the word using the drop down answer length boxes and click on 'Find Answers' to retrieve all potential \
 words that match based on the characters found. Empty boxes that are within the answer length will match all letters.",
-        font="Raleway",
-        wraplength=screen_width - 10)
-    instructions.pack(fill="x", padx=20, pady=0)
+        font=("Arial", 12, "bold"),
+        wraplength=screen_width - 20,
+        background="#D9D9F3")
+    instructions.pack(fill="x", padx=20, pady=20, expand=True)
     
-    entry_frame = tk.Frame(frame1, bd=0, height=((screen_height//5)*2)//2)
+    entry_frame = tk.Frame(frame1, bd=0, height=((screen_height//5)*2)//2, background="#D9D9F3")
     entry_frame.pack(padx=20, pady=0, fill="x")
     
-    numbers_frame = tk.Frame(frame1, bd=0, height=((screen_height//5)*2)//8)
+    numbers_frame = tk.Frame(frame1, bd=0, height=((screen_height//5)*2)//8, background="#D9D9F3")
     numbers_frame.pack(padx=20, pady=0, fill="x")
 
     entries = []
@@ -53,7 +57,7 @@ words that match based on the characters found. Empty boxes that are within the 
         textbox.pack(side="left", fill="both", expand=True)
         textbox.bind("<KeyRelease>", on_release)
         entries.append(textbox)
-        number_box = tk.Label(numbers_frame, text=i+1)
+        number_box = tk.Label(numbers_frame, text=i+1, background="#D9D9F3")
         number_box.pack(side="left", expand=True)
         wordlengths.append(i+1)
 
@@ -78,6 +82,10 @@ words that match based on the characters found. Empty boxes that are within the 
         nonlocal result_frames
         nonlocal result_pages
         nonlocal selected_option
+        nonlocal res_page
+
+        res_page.forget()
+        res_page.destroy()
 
         if result_pages:
             for page in result_pages:
@@ -101,6 +109,13 @@ words that match based on the characters found. Empty boxes that are within the 
             messagebox.showerror("Error", "Pattern must contain atleast one letter!")
             return
 
+        known_chars = []
+
+        # used later as indices to change known chars to red
+        for i in range(len(pattern)):
+            if pattern[i].isalpha():
+                known_chars.append(i)
+
         pattern = "^" + pattern + "$"
 
         nonlocal matches
@@ -112,28 +127,40 @@ words that match based on the characters found. Empty boxes that are within the 
             if re.match(pattern, line.strip()):
                 matches.add(line.strip())
 
-        res_page = tk.Frame(frame2, relief="groove", bd=5, height=(screen_height//5)*3, width=screen_width)
-        res_page.pack(fill="both", expand=True, padx=20, pady=20)
+        res_page = tk.Frame(frame2, relief="groove", bd=5, height=(screen_height//5)*3.5, width=screen_width, background="#DAEAF6")
+        res_page.pack(fill="both", padx=40, pady=40, expand=True)
         result_pages.append(res_page)
 
-        res_frame = tk.Frame(res_page, height=((screen_height//5)*3)//6)
-        res_frame.pack(side="top", expand=True, fill="x")
+        res_frame = tk.Frame(res_page, height=((screen_height//5)*3.5)//6, background="#DAEAF6")
+        res_frame.pack(side="top", fill="x")
         result_frames.append(res_frame)
 
         counter = 0
 
         for match in matches:
             if counter % 30 == 0 and counter:
-                res_page = tk.Frame(frame2, relief="groove", bd=5, height=(screen_height//5)*3, width=screen_width)
+                res_page = tk.Frame(frame2, relief="groove", bd=5, height=(screen_height//5)*3.5, width=screen_width, background="#DAEAF6")
                 result_pages.append(res_page)
 
             if counter % 5 == 0 and counter:
-                res_frame = tk.Frame(res_page, width=screen_width, height=((screen_height//5)*3)//6)
+                res_frame = tk.Frame(res_page, width=screen_width, height=((screen_height//5)*3.5)//6, background="#DAEAF6")
                 res_frame.pack(side="top", fill="x", expand=True)
                 result_frames.append(res_frame)
 
-            res_label = tk.Label(res_frame, text="- " + match)
-            res_label.pack(side="left", expand=True)
+            res_label = tk.Text(res_frame, font=("Helvetica", ((screen_height//5)*2)//17, "bold"), height=1, width=20, background="#DAEAF6")
+            res_label.pack(side="left", fill="x", expand=True)
+
+            res_label.insert("1.0", "• " + match)
+
+            # use to highlight the known characters in red
+            res_label.tag_config("red", foreground="red")
+            for char in known_chars:
+                start = "1." + str(char + 2)
+                end = "1." + str(char + 3) 
+                res_label.tag_add("red", start, end)
+
+            res_label.configure(state="disabled", background="#DAEAF6", relief="flat")
+
             result_labels.append(res_label)
             
             counter += 1
@@ -162,7 +189,7 @@ words that match based on the characters found. Empty boxes that are within the 
         page_no.configure(text="1")
 
 
-    options_frame = tk.Frame(frame1)
+    options_frame = tk.Frame(frame1, height=((screen_height//5)*2)//8, background="#D9D9F3")
     options_frame.pack(fill="x")
 
     clear_answers = tk.Button(options_frame, text="Clear", command=clear_button_click)
@@ -176,10 +203,10 @@ words that match based on the characters found. Empty boxes that are within the 
     wordlength.bind("<<ComboboxSelected>>", option_selected)
     wordlength.pack(pady=20, padx=20, side="right")
 
-    wordlength_label = tk.Label(options_frame, text="Please specify length of answer: ")
+    wordlength_label = tk.Label(options_frame, text="Please specify length of answer: ", background="#D9D9F3")
     wordlength_label.pack(pady=20, side="right")
 
-    change_page = tk.Frame(frame1)
+    change_page = tk.Frame(frame1, height=((screen_height//5)*2)//8, background="#D9D9F3")
     change_page.pack(fill="x", padx=20)
 
 
@@ -191,7 +218,7 @@ words that match based on the characters found. Empty boxes that are within the 
         if page == len(result_pages):
             return
         result_pages[page-1].pack_forget()
-        result_pages[page].pack(fill="both", expand=True, padx=20, pady=20)
+        result_pages[page].pack(fill="both", padx=40, pady=40, expand=True)
         page_no.configure(text=str(page + 1))
 
 
@@ -203,20 +230,20 @@ words that match based on the characters found. Empty boxes that are within the 
         if page == 1:
             return
         result_pages[page-1].pack_forget()
-        result_pages[page-2].pack(fill="both", expand=True, padx=20, pady=20)
+        result_pages[page-2].pack(fill="both", padx=40, pady=40, expand=True)
         page_no.configure(text=str(page - 1))
 
 
     page_right = tk.Button(change_page, text=">", command=next_page)
     page_right.pack(side="right")
 
-    page_no = tk.Label(change_page, text="1")
+    page_no = tk.Label(change_page, text="1", background="#D9D9F3")
     page_no.pack(side="right")
 
     page_left = tk.Button(change_page, text="<", command=previous_page)
     page_left.pack(side="right")
 
-    page_text = tk.Label(change_page, text="Answer Results")
+    page_text = tk.Label(change_page, text="Answer Results", background="#D9D9F3")
     page_text.pack(side="right")
 
     root.mainloop()
